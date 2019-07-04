@@ -18,12 +18,22 @@
 #include <iostream>
 #include <utility.h>
 
+#include "tap.h"
 #include "arp.h"
 #include "ethernet.h"
-#include "tap.h"
+#include "ipv4.h"
 
 
-Tap::Tap(const std::string& desired_device_name, const std::string& ipv4) : m_sock_fd(), m_ipv4(), m_device_name(), m_mac(), m_ipv6(), m_mtu(), m_arp_state(this), m_ipv4_state(this) {
+Tap::Tap(const std::string& desired_device_name, const std::string& ipv4)
+        : m_sock_fd()
+        , m_ipv4()
+        , m_device_name()
+        , m_mac()
+        , m_ipv6()
+        , m_mtu()
+        , m_arp_state(*this)
+        , m_ipv4_state(*this, m_icmp_state)
+        , m_icmp_state(*this, m_ipv4_state) {
     initDevice(desired_device_name);
 
     // Parse IPv4 address

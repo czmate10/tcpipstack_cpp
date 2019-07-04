@@ -7,6 +7,7 @@
 #include "buffer.h"
 #include "arp.h"
 #include "ipv4.h"
+#include "icmp.h"
 
 class Tap {
 private:
@@ -15,6 +16,7 @@ private:
 
     Arp m_arp_state;
     Ipv4 m_ipv4_state;
+    Icmp m_icmp_state;
 
     std::shared_ptr<Buffer> read(size_t size);
 

@@ -36,7 +36,7 @@ private:
         uint32_t protocol_address;
     };
 
-    Tap *m_tap_device;
+    Tap &m_tap_device;
     std::unordered_map<uint32_t, Arp::ArpCacheEntry> m_arp_cache;
 
     ArpPacket parseArpPacket(const std::shared_ptr<Buffer>& buffer);
@@ -44,7 +44,7 @@ private:
 
 
 public:
-    explicit Arp(Tap *tap_device);
+    explicit Arp(Tap &tap_device);
 
     void processArpPacket(const std::shared_ptr<Buffer>& buffer);
 };

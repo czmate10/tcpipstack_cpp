@@ -6,9 +6,11 @@
 #include "buffer.h"
 
 #define IPV4_ADDRESS_LEN 4
-
+#define IPV4_FLAG_DF 0x4000  // don't fragment
+#define IPV4_FLAG_MF 0x2000 // more fragments
 
 class Tap;
+class Icmp;
 
 class Ipv4 {
 private:
@@ -28,12 +30,13 @@ private:
         uint8_t data[];
     } __attribute__((packed));
 
-    Tap *m_tap_device;
+    Tap &m_tap_device;
+    Icmp &m_icmp_state;
 
     Ipv4Packet parseIpv4Packet(const std::shared_ptr<Buffer>& buffer);
 
 public:
-    explicit Ipv4(Tap *tap_device);
+    Ipv4(Tap &tap_device, Icmp &icmp_state);
 
     void processIpv4Packet(const std::shared_ptr<Buffer>& buffer);
 };

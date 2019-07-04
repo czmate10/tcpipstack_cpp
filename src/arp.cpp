@@ -6,7 +6,7 @@
 #include "utility.h"
 #include "arp.h"
 
-Arp::Arp(Tap *tap_device) : m_tap_device(tap_device), m_arp_cache() {
+Arp::Arp(Tap &tap_device) : m_tap_device(tap_device), m_arp_cache() {
 
 }
 
@@ -51,15 +51,15 @@ void Arp::processArpPacketIPv4(uint16_t opcode, uint8_t *source_mac, uint8_t *de
         arp_packet.hw_size = ETHERNET_ADDRESS_LEN;
         arp_packet.protocol_size = IPV4_ADDRESS_LEN;
         arp_packet.op_code = htons(ARP_OP_REPLY);
-        arp_packet.source_addr = m_tap_device->m_ipv4;
+        arp_packet.source_addr = m_tap_device.m_ipv4;
         arp_packet.dest_addr = source_addr;
 
-        std::memcpy(arp_packet.source_mac, m_tap_device->m_mac, 6);
+        std::memcpy(arp_packet.source_mac, m_tap_device.m_mac, 6);
         std::memcpy(arp_packet.dest_mac, source_mac, 6);
 
         std::memcpy(buffer->m_data, &arp_packet, sizeof(arp_packet));
 
-        m_tap_device->send(source_mac, ETH_P_ARP, buffer);
+        m_tap_device.send(source_mac, ETH_P_ARP, buffer);
     }
 
     // Add to cache
