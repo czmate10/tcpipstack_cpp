@@ -24,9 +24,9 @@ private:
         uint8_t hw_size;
         uint8_t protocol_size;
         uint16_t op_code;
-        uint8_t *source_mac;
+        uint8_t source_mac[6];
         uint32_t source_addr;
-        uint8_t *dest_mac;
+        uint8_t dest_mac[6];
         uint32_t dest_addr;
     } __attribute__((packed));
 

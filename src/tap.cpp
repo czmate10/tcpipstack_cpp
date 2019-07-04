@@ -23,7 +23,7 @@
 #include "tap.h"
 
 
-Tap::Tap(const std::string& desired_device_name, const std::string& ipv4) : m_sock_fd(), m_ipv4(), m_device_name(), m_mac(), m_ipv6(), m_mtu(), m_arp_state(this) {
+Tap::Tap(const std::string& desired_device_name, const std::string& ipv4) : m_sock_fd(), m_ipv4(), m_device_name(), m_mac(), m_ipv6(), m_mtu(), m_arp_state(this), m_ipv4_state(this) {
     initDevice(desired_device_name);
 
     // Parse IPv4 address
@@ -97,11 +97,12 @@ void Tap::listen() {
                 break;
 
             case ETH_P_IP:
-                std::cout << "IPv4 request" << std::endl;
+                buffer->m_data += ETHERNET_HEADER_SIZE;
+                m_ipv4_state.processIpv4Packet(buffer);
+
                 break;
 
             case ETH_P_IPV6:
-                std::cout << "IPv6 request" << std::endl;
                 break;
 
             default:

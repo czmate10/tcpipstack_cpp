@@ -6,12 +6,15 @@
 
 #include "buffer.h"
 #include "arp.h"
+#include "ipv4.h"
 
 class Tap {
 private:
     bool m_running = true;
     int m_sock_fd;
+
     Arp m_arp_state;
+    Ipv4 m_ipv4_state;
 
     std::shared_ptr<Buffer> read(size_t size);
 

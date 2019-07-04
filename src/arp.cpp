@@ -11,19 +11,13 @@ Arp::Arp(Tap *tap_device) : m_tap_device(tap_device), m_arp_cache() {
 }
 
 Arp::ArpPacket Arp::parseArpPacket(const std::shared_ptr<Buffer> &buffer) {
-    ArpPacket arp_packet{};
+    auto arp_packet = reinterpret_cast<ArpPacket *>(buffer->m_data);
 
-    arp_packet.hw_type = buffer->unpack16(0);
-    arp_packet.protocol_type = buffer->unpack16(2);
-    arp_packet.hw_size = buffer->unpack8(4);
-    arp_packet.protocol_size = buffer->unpack8(5);
-    arp_packet.op_code = buffer->unpack16(6);
-    arp_packet.source_mac = &buffer->m_data[8];
-    arp_packet.source_addr = buffer->m_data[14];
-    arp_packet.dest_mac = &buffer->m_data[18];
-    arp_packet.source_addr = buffer->m_data[24];
+    arp_packet->hw_type = ntohs(arp_packet->hw_type);
+    arp_packet->protocol_type = ntohs(arp_packet->protocol_type);
+    arp_packet->op_code = ntohs(arp_packet->op_code);
 
-    return arp_packet;
+    return *arp_packet;
 }
 
 void Arp::processArpPacket(const std::shared_ptr<Buffer>& buffer) {
@@ -51,15 +45,19 @@ void Arp::processArpPacketIPv4(uint16_t opcode, uint8_t *source_mac, uint8_t *de
         auto buffer = std::make_shared<Buffer>(ETHERNET_HEADER_SIZE + sizeof(ArpPacket));
         buffer->m_data += ETHERNET_HEADER_SIZE;
 
-        buffer->pack16(ARP_HWTYPE_ETHERNET, 0);
-        buffer->pack16(ETH_P_IP, 2);
-        buffer->pack8(ETHERNET_ADDRESS_LEN, 4);
-        buffer->pack8(IPV4_ADDRESS_LEN, 5);
-        buffer->pack16(ARP_OP_REPLY, 6);
-        std::memcpy(buffer->m_data + 8, m_tap_device->m_mac, 6);
-        std::memcpy(buffer->m_data + 14, &m_tap_device->m_ipv4, 4);
-        std::memcpy(buffer->m_data + 18, source_mac, 6);
-        std::memcpy(buffer->m_data + 24, &source_addr, 4);
+        ArpPacket arp_packet{};
+        arp_packet.hw_type = htons(ARP_HWTYPE_ETHERNET);
+        arp_packet.protocol_type = htons(ETH_P_IP);
+        arp_packet.hw_size = ETHERNET_ADDRESS_LEN;
+        arp_packet.protocol_size = IPV4_ADDRESS_LEN;
+        arp_packet.op_code = htons(ARP_OP_REPLY);
+        arp_packet.source_addr = m_tap_device->m_ipv4;
+        arp_packet.dest_addr = source_addr;
+
+        std::memcpy(arp_packet.source_mac, m_tap_device->m_mac, 6);
+        std::memcpy(arp_packet.dest_mac, source_mac, 6);
+
+        std::memcpy(buffer->m_data, &arp_packet, sizeof(arp_packet));
 
         m_tap_device->send(source_mac, ETH_P_ARP, buffer);
     }
