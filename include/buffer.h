@@ -14,11 +14,13 @@ public:
     explicit Buffer(size_t size);
     ~Buffer();
 
-    void pack8(size_t offset);
-    void pack16(size_t offset);
-    void pack32(size_t offset);
+    void resetDataOffset();
 
-    uint8_t unpack8(size_t offset);
-    uint16_t unpack16(size_t offset);
-    uint32_t unpack32(size_t offset);
+    void pack8(uint8_t data, size_t offset = 0);
+    void pack16(uint16_t data, size_t offset = 0);
+    void pack32(uint32_t data, size_t offset = 0);
+
+    uint8_t unpack8(size_t offset = 0);
+    uint16_t unpack16(size_t offset = 0);
+    uint32_t unpack32(size_t offset = 0);
 };

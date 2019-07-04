@@ -16,6 +16,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <iostream>
+#include <utility.h>
 
 #include "arp.h"
 #include "ethernet.h"
@@ -57,13 +58,14 @@ void Tap::initDevice(const std::string &device_name) {
     m_device_name = ifr.ifr_name;
 
     // Get MAC address
-    ifr = {0};
-    std::strcpy(ifr.ifr_name, m_device_name.c_str());
-    if(ioctl(m_sock_fd, SIOCGIFHWADDR, reinterpret_cast<void *>(&ifr)) < 0) {
-        close(m_sock_fd);
-        throw std::runtime_error("ioctl(SIOCGIFHWADDR) failed: " + std::string(strerror(errno)));
-    }
-    std::memcpy(m_mac, ifr.ifr_hwaddr.sa_data, IFHWADDRLEN);
+//    ifr = {0};
+//    std::strcpy(ifr.ifr_name, m_device_name.c_str());
+//    if(ioctl(m_sock_fd, SIOCGIFHWADDR, reinterpret_cast<void *>(&ifr)) < 0) {
+//        close(m_sock_fd);
+//        throw std::runtime_error("ioctl(SIOCGIFHWADDR) failed: " + std::string(strerror(errno)));
+//    }
+//    std::memcpy(m_mac, ifr.ifr_hwaddr.sa_data, ETHERNET_ADDRESS_LEN);
+    stringToMac("20:20:20:20:20:20", m_mac);
 
     // Get MTU
     m_mtu = 1500;  // TODO: fix invalid argument error for ioctl when reading MTU
@@ -89,8 +91,6 @@ void Tap::listen() {
 
         switch(type) {
             case ETH_P_ARP:
-                std::cout << "ARP request" << std::endl;
-
                 buffer->m_data += ETHERNET_HEADER_SIZE;
                 m_arp_state.processArpPacket(buffer);
 
@@ -110,9 +110,15 @@ void Tap::listen() {
     }
 }
 
-void Tap::write(std::shared_ptr<Buffer> buffer) {
+void Tap::send(uint8_t *dest_mac, uint16_t eth_type, const std::shared_ptr<Buffer>& buffer) {
+    // Setup Ethernet frame
+    buffer->resetDataOffset();
+    std::memcpy(buffer->m_data, dest_mac, 6);
+    std::memcpy(buffer->m_data + 6, m_mac, 6);
+    buffer->pack16(eth_type, 12);
+
     ssize_t bytes = ::write(m_sock_fd, buffer->m_data, buffer->m_size);
 
     if(bytes < 0)
-        throw std::runtime_error("failed to write buffer");
+        throw std::runtime_error("failed to send buffer");
 }

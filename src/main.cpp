@@ -18,5 +18,6 @@ int main() {
 
     tap_device->listen();
 
+    delete tap_device;
     return 0;
 }
