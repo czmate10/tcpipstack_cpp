@@ -2,26 +2,30 @@
 
 #include <string>
 #include <cstdint>
+#include <memory>
 
+#include "buffer.h"
+#include "arp.h"
 
 class Tap {
 private:
+    bool m_running = true;
     int m_sock_fd;
-    std::string m_deviceName;
+    Arp m_arp_state;
+
+    std::shared_ptr<Buffer> read(size_t size);
+    void write(std::shared_ptr<Buffer> buffer);
+
+public:
+    std::string m_device_name;
     uint8_t m_mac[6];
     uint32_t m_ipv4;
     uint64_t m_ipv6[2];
     uint16_t m_mtu;
 
-public:
-    explicit Tap(const std::string& desiredDeviceName);
+    explicit Tap(const std::string& desired_device_name, const std::string& ipv4);
     ~Tap();
 
-    void InitDevice(const std::string& deviceName);
-
-    std::string deviceName() { return m_deviceName; }
-    uint8_t *mac() { return m_mac; }
-    uint32_t ipv4() { return m_ipv4; }
-    uint64_t* ipv6() { return m_ipv6; }
-    uint16_t mtu() { return m_mtu; }
+    void initDevice(const std::string &device_name);
+    void listen();
 };

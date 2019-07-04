@@ -3,4 +3,17 @@ project(tcpipstack_cpp)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(tcpipstack_cpp src/main.cpp src/tap.cpp include/tap.h)
+include_directories(include)
+
+add_executable(tcpipstack_cpp
+        src/main.cpp
+        src/tap.cpp
+        src/buffer.cpp
+        src/arp.cpp
+        src/utility.cpp
+
+        include/tap.h
+        include/ethernet.h
+        include/buffer.h
+        include/arp.h
+        include/utility.h )
