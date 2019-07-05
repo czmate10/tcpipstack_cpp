@@ -10,16 +10,6 @@
 #include "icmp.h"
 
 class Tap {
-private:
-    bool m_running = true;
-    int m_sock_fd;
-
-    Arp m_arp_state;
-    Ipv4 m_ipv4_state;
-    Icmp m_icmp_state;
-
-    std::shared_ptr<Buffer> read(size_t size);
-
 public:
     std::string m_device_name;
     uint8_t m_mac[6];
@@ -33,4 +23,14 @@ public:
 
     void initDevice(const std::string &device_name);
     void listen();
+
+private:
+    bool m_running = true;
+    int m_sock_fd;
+
+    Arp m_arp_state;
+    Ipv4 m_ipv4_state;
+    Icmp m_icmp_state;
+
+    std::shared_ptr<Buffer> read(size_t size);
 };

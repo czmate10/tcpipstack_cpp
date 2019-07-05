@@ -10,10 +10,14 @@ add_executable(tcpipstack_cpp
         src/tap.cpp
         src/buffer.cpp
         src/arp.cpp
+        src/ipv4.cpp
+        src/icmp.cpp
         src/utility.cpp
 
         include/tap.h
         include/ethernet.h
         include/buffer.h
         include/arp.h
-        include/utility.h include/ipv4.h src/ipv4.cpp include/icmp.h src/icmp.cpp)
+        include/utility.h
+        include/ipv4.h
+        include/icmp.h include/packets.h)

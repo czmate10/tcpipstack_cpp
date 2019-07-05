@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "packets.h"
 #include "buffer.h"
 
 
@@ -16,5 +17,5 @@ private:
 
 public:
     Icmp(Tap& tap_device, Ipv4 &ipv4_state);
-    void processIcmpPacket(const std::shared_ptr<Buffer> &buffer);
+    void processIcmpPacket(const std::shared_ptr<Buffer> &buffer, Ipv4Packet *ipv4_packet);
 };

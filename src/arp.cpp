@@ -1,5 +1,7 @@
 #include <linux/if_ether.h>
 #include <cstring>
+#include <netinet/in.h>
+#include <iostream>
 
 #include "tap.h"
 #include "ipv4.h"
@@ -10,7 +12,7 @@ Arp::Arp(Tap &tap_device) : m_tap_device(tap_device), m_arp_cache() {
 
 }
 
-Arp::ArpPacket Arp::parseArpPacket(const std::shared_ptr<Buffer> &buffer) {
+ArpPacket Arp::parseArpPacket(const std::shared_ptr<Buffer> &buffer) {
     auto arp_packet = reinterpret_cast<ArpPacket *>(buffer->m_data);
 
     arp_packet->hw_type = ntohs(arp_packet->hw_type);
@@ -36,8 +38,6 @@ void Arp::processArpPacket(const std::shared_ptr<Buffer>& buffer) {
         return;
 
     processArpPacketIPv4(arp_packet.op_code, arp_packet.source_mac, arp_packet.dest_mac, arp_packet.source_addr, arp_packet.dest_addr);
-
-    printf("ARP request, from: %s - to: %s\n", macToString(arp_packet.source_mac).c_str(), macToString(arp_packet.dest_mac).c_str());
 }
 
 void Arp::processArpPacketIPv4(uint16_t opcode, uint8_t *source_mac, uint8_t *dest_mac, uint32_t source_addr, uint32_t dest_addr) {
@@ -68,4 +68,15 @@ void Arp::processArpPacketIPv4(uint16_t opcode, uint8_t *source_mac, uint8_t *de
             .protocol_address = source_addr
     };
     m_arp_cache[source_addr] = cache_entry;
+
+    std::cout << "Added IP to ARP cache: " << ipv4ToString(source_addr) << " : " << macToString(source_mac) << std::endl;
+}
+
+uint8_t *Arp::translate_protocol_addr(uint32_t protocol_addr) {
+    auto result = m_arp_cache.find(protocol_addr);
+
+    if(result == m_arp_cache.end())
+        return nullptr;
+    else
+        return result->second.hw_address;
 }

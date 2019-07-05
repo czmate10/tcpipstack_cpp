@@ -32,7 +32,7 @@ Tap::Tap(const std::string& desired_device_name, const std::string& ipv4)
         , m_ipv6()
         , m_mtu()
         , m_arp_state(*this)
-        , m_ipv4_state(*this, m_icmp_state)
+        , m_ipv4_state(*this, m_arp_state, m_icmp_state)
         , m_icmp_state(*this, m_ipv4_state) {
     initDevice(desired_device_name);
 

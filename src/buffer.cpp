@@ -23,8 +23,8 @@ Buffer::~Buffer() {
     std::free(m_data_original);
 }
 
-void Buffer::resetDataOffset() {
-    m_data = m_data_original;
+void Buffer::resetDataOffset(size_t offset) {
+    m_data = m_data_original + offset;
 }
 
 uint8_t Buffer::unpack8(size_t offset) {
