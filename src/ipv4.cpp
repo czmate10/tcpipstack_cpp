@@ -15,6 +15,10 @@ Ipv4::Ipv4(Tap &tap_device, Arp& arp_state, Icmp& icmp_state) : m_tap_device(tap
 void Ipv4::processIpv4Packet(const std::shared_ptr<Buffer> &buffer) {
     auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->m_data);
 
+    // Is it for us?
+    if(ip_packet->dest_ip != m_tap_device.m_ipv4)
+        return;
+
     // Validate checksum
     uint16_t checksum_original = ip_packet->checksum;
     ip_packet->checksum = 0;

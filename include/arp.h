@@ -34,5 +34,6 @@ private:
     std::unordered_map<uint32_t, Arp::ArpCacheEntry> m_arp_cache;
 
     ArpPacket parseArpPacket(const std::shared_ptr<Buffer>& buffer);
-    void processArpPacketIPv4(uint16_t opcode, uint8_t *source_mac, uint8_t *dest_mac, uint32_t source_addr, uint32_t dest_addr);
+    void processArpPacket(uint16_t opcode, uint8_t *source_mac, uint8_t *dest_mac, uint32_t source_addr,
+                          uint32_t dest_addr);
 };

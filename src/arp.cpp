@@ -37,10 +37,21 @@ void Arp::processArpPacket(const std::shared_ptr<Buffer>& buffer) {
     if(arp_packet.protocol_type != ETH_P_IP)
         return;
 
-    processArpPacketIPv4(arp_packet.op_code, arp_packet.source_mac, arp_packet.dest_mac, arp_packet.source_addr, arp_packet.dest_addr);
+    processArpPacket(arp_packet.op_code, arp_packet.source_mac, arp_packet.dest_mac, arp_packet.source_addr,
+                     arp_packet.dest_addr);
 }
 
-void Arp::processArpPacketIPv4(uint16_t opcode, uint8_t *source_mac, uint8_t *dest_mac, uint32_t source_addr, uint32_t dest_addr) {
+void Arp::processArpPacket(uint16_t opcode, uint8_t *source_mac, uint8_t *dest_mac, uint32_t source_addr, uint32_t dest_addr) {
+    // Is it for us or broadcast?
+    for(int i = 0; i < ETHERNET_ADDRESS_LEN; i++) {
+        if (dest_mac[i] != 0x00) {
+            if (memcmp(dest_mac, m_tap_device.m_mac, 6) != 0)
+                return;
+            else
+                break;
+        }
+    }
+
     if(opcode == ARP_OP_REQUEST) {
         auto buffer = std::make_shared<Buffer>(ETHERNET_HEADER_SIZE + sizeof(ArpPacket));
         buffer->m_data += ETHERNET_HEADER_SIZE;
