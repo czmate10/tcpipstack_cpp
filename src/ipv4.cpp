@@ -12,8 +12,8 @@ Ipv4::Ipv4(Tap &tap_device, Arp& arp_state, Icmp& icmp_state) : m_tap_device(tap
 
 }
 
-void Ipv4::processIpv4Packet(const std::shared_ptr<Buffer> &buffer) {
-    auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->m_data);
+void Ipv4::processIpv4Packet(EthernetFrame *frame) {
+    auto ip_packet = reinterpret_cast<Ipv4Packet *>(frame->payload);
 
     // Is it for us?
     if(ip_packet->dest_ip != m_tap_device.m_ipv4)
@@ -38,8 +38,6 @@ void Ipv4::processIpv4Packet(const std::shared_ptr<Buffer> &buffer) {
         std::cerr << "Received fragmented IP packet, dropping it..." << std::endl;
         return;
     }
-
-    buffer->m_data += ip_packet->header_len * 4;
 
     switch(ip_packet->protocol) {
         case IPPROTO_ICMP:

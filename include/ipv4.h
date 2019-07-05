@@ -20,7 +20,7 @@ class Ipv4 {
 public:
     Ipv4(Tap &tap_device, Arp &arp_state, Icmp &icmp_state);
 
-    void processIpv4Packet(const std::shared_ptr<Buffer>& buffer);
+    void processIpv4Packet(EthernetFrame *frame);
     std::shared_ptr<Buffer> createPacket(uint32_t ip_destination, uint8_t ip_protocol, size_t size);
     void transmitPacket(const std::shared_ptr<Buffer>& buffer);
 

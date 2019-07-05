@@ -20,7 +20,7 @@ class Arp {
 public:
     explicit Arp(Tap &tap_device);
 
-    void processArpPacket(const std::shared_ptr<Buffer>& buffer);
+    void processArpPacket(EthernetFrame *frame);
     uint8_t *translateProtocolAddr(uint32_t protocol_addr);
 
 private:

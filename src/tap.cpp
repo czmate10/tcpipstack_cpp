@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <sys/types.h>
 #include <unistd.h>
-#include <errno.h>
 #include <memory>
 
 #include <sys/socket.h>
@@ -96,27 +95,23 @@ void Tap::listen() {
 
     while(m_running) {
         auto buffer = read(ETHERNET_MAX_PAYLOAD_SIZE);
+        auto ethernet_frame = reinterpret_cast<EthernetFrame *>(buffer->m_data);
+        auto ethernet_type = ntohs(ethernet_frame->ethernet_type);
 
-        auto type = buffer->unpack16(12);
-
-        switch(type) {
+        switch(ethernet_type) {
             case ETH_P_ARP:
-                buffer->m_data += ETHERNET_HEADER_SIZE;
-                m_arp_state.processArpPacket(buffer);
-
+                m_arp_state.processArpPacket(ethernet_frame);
                 break;
 
             case ETH_P_IP:
-                buffer->m_data += ETHERNET_HEADER_SIZE;
-                m_ipv4_state.processIpv4Packet(buffer);
-
+                m_ipv4_state.processIpv4Packet(ethernet_frame);
                 break;
 
             case ETH_P_IPV6:
                 break;
 
             default:
-                throw std::runtime_error("unknown ethernet type encountered: " + std::to_string(type));
+                throw std::runtime_error("unknown ethernet type encountered: " + std::to_string(ethernet_type));
         }
     }
 }

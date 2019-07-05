@@ -12,8 +12,8 @@ Arp::Arp(Tap &tap_device) : m_tap_device(tap_device), m_arp_cache() {
 
 }
 
-void Arp::processArpPacket(const std::shared_ptr<Buffer>& buffer) {
-    auto arp_packet = reinterpret_cast<ArpPacket *>(buffer->m_data);
+void Arp::processArpPacket(EthernetFrame *frame) {
+    auto arp_packet = reinterpret_cast<ArpPacket *>(frame->payload);
 
     arp_packet->hw_type = ntohs(arp_packet->hw_type);
     arp_packet->protocol_type = ntohs(arp_packet->protocol_type);

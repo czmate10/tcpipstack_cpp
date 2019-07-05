@@ -3,6 +3,14 @@
 #include <cstdint>
 
 
+struct EthernetFrame
+{
+    uint8_t dest_mac[6];
+    uint8_t source_mac[6];
+    uint16_t ethernet_type;
+    uint8_t payload[];
+};
+
 struct ArpPacket
 {
     uint16_t hw_type;
