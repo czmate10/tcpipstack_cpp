@@ -14,14 +14,14 @@ std::string macToString(uint8_t *mac) {
     return buff.str();
 }
 
-void stringToMac(const std::string& macString, uint8_t *out) {
+void stringToMac(const std::string& mac_string, uint8_t *out) {
     unsigned int bytes[6];
-    if (std::sscanf(macString.c_str(),
+    if (std::sscanf(mac_string.c_str(),
                     "%02x:%02x:%02x:%02x:%02x:%02x",
                     &bytes[0], &bytes[1], &bytes[2],
                     &bytes[3], &bytes[4], &bytes[5]) != 6)
     {
-        throw std::runtime_error("invalid MAC address: " + macString);
+        throw std::runtime_error("invalid MAC address: " + mac_string);
     }
     for(int i = 0; i < 6; i++) {
         out[i] = bytes[i];
@@ -70,7 +70,7 @@ uint16_t checksum(uint16_t *ptr, uint32_t len, uint32_t sum)
     return (uint16_t)~sum;
 }
 
-uint16_t tcp_checksum(void *tcp_segment, uint16_t tcp_segment_len, uint32_t source_ip, uint32_t dest_ip) {
+uint16_t tcpChecksum(void *tcp_segment, uint16_t tcp_segment_len, uint32_t source_ip, uint32_t dest_ip) {
     // We need to include the pseudo-header in the checksum.
     uint32_t sum = htons(IPPROTO_TCP)
                    + htons(tcp_segment_len)

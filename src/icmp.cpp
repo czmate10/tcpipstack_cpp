@@ -14,7 +14,7 @@ Icmp::Icmp(Tap& tap_device, Ipv4 &ipv4_state) : m_tap_device(tap_device), m_ipv4
 void Icmp::processIcmpPacket(Ipv4Packet *ipv4_packet) {
     auto icmp_packet = reinterpret_cast<IcmpPacket *>(ipv4_packet->payload);
 
-    uint32_t icmp_packet_size = ipv4_packet->len - (ipv4_packet->header_len * 4);
+    uint32_t icmp_packet_size = ipv4_packet->len - (ipv4_packet->header_len * 4u);
 
     // Calculate checksum, need to set to 0 for it
     uint16_t checksum_original = icmp_packet->checksum;
@@ -38,8 +38,6 @@ void Icmp::processIcmpPacket(Ipv4Packet *ipv4_packet) {
             icmp_packet_reply->checksum = checksum(reinterpret_cast<uint16_t *>(icmp_packet_reply), icmp_packet_size, 0);
 
             m_ipv4_state.transmitPacket(buffer_reply);
-
-            std::cout << "sent reply" <<std::endl;
             break;
         }
 

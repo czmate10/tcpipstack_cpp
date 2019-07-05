@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 
 #include "packets.h"
 #include "buffer.h"
@@ -23,9 +25,12 @@ public:
     void processIpv4Packet(EthernetFrame *frame);
     std::shared_ptr<Buffer> createPacket(uint32_t ip_destination, uint8_t ip_protocol, size_t size);
     void transmitPacket(const std::shared_ptr<Buffer>& buffer);
+    void retryPendingPackets(uint32_t ip_destination);
 
 private:
     Tap &m_tap_device;
     Arp &m_arp_state;
     Icmp &m_icmp_state;
+
+    std::unordered_map<uint32_t, std::vector<std::shared_ptr<Buffer>>> m_pending_packets;
 };

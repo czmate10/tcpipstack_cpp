@@ -22,7 +22,7 @@ void Ipv4::processIpv4Packet(EthernetFrame *frame) {
     // Validate checksum
     uint16_t checksum_original = ip_packet->checksum;
     ip_packet->checksum = 0;
-    ip_packet->checksum = checksum(reinterpret_cast<uint16_t *>(ip_packet), ip_packet->header_len * 4, 0);
+    ip_packet->checksum = checksum(reinterpret_cast<uint16_t *>(ip_packet), ip_packet->header_len * 4u, 0);
 
     if(checksum_original != ip_packet->checksum) {
         std::cerr << "Dropping IPv4 packet with wrong checksum" << std::endl;
@@ -58,15 +58,19 @@ void Ipv4::processIpv4Packet(EthernetFrame *frame) {
 }
 
 std::shared_ptr<Buffer> Ipv4::createPacket(uint32_t ip_destination, uint8_t ip_protocol, size_t size) {
-    auto buffer = std::make_shared<Buffer>(ETHERNET_HEADER_SIZE + sizeof(Ipv4Packet) + size);
+    auto buffer = std::make_shared<Buffer>(sizeof(EthernetFrame) + sizeof(Ipv4Packet) + size);
+
+    // Set Ethernet type
+    auto ethernet_frame = reinterpret_cast<EthernetFrame *>(buffer->m_data);
+    ethernet_frame->ethernet_type = htons(ETH_P_IP);
 
     // Header stuff
     uint8_t header_len = 20;
 
-    auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->m_data + ETHERNET_HEADER_SIZE);
+    auto ip_packet = reinterpret_cast<Ipv4Packet *>(ethernet_frame->payload);
     ip_packet->header_len = header_len >> 2u;
     ip_packet->version = 4;
-    ip_packet->len = htons(buffer->m_size - ETHERNET_HEADER_SIZE);
+    ip_packet->len = htons(buffer->m_size - sizeof(EthernetFrame));
     ip_packet->id = static_cast<uint16_t>(lrand48());
     ip_packet->fragment_offset = htons(IPV4_FLAG_DF);
     ip_packet->ttl = IPV4_DEFAULT_TTL;
@@ -77,21 +81,30 @@ std::shared_ptr<Buffer> Ipv4::createPacket(uint32_t ip_destination, uint8_t ip_p
     ip_packet->checksum = checksum(reinterpret_cast<uint16_t *>(ip_packet), 20, 0);
 
     // Set pointer to the payload
-    buffer->m_data += ETHERNET_HEADER_SIZE + sizeof(Ipv4Packet);
+    buffer->m_data += sizeof(EthernetFrame) + header_len;
 
     return buffer;
 }
 
 void Ipv4::transmitPacket(const std::shared_ptr<Buffer>& buffer) {
-    auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->getDefaultDataOffset() + ETHERNET_HEADER_SIZE);
+    auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->getDefaultDataOffset() + sizeof(EthernetFrame));
 
     // Get hardware address of destination
     auto dest_mac = m_arp_state.translateProtocolAddr(ip_packet->dest_ip);
     if(dest_mac == nullptr) {
-        std::cerr << "destination IP not found in ARP cache: " << ipv4ToString(ip_packet->dest_ip) << std::endl;
+        m_pending_packets[ip_packet->dest_ip].push_back(buffer);
         return;
     }
 
-    std::cout << "sending to " << macToString(dest_mac) << std::endl;
-    m_tap_device.send(dest_mac, ETH_P_IP, buffer);
+    m_tap_device.send(dest_mac, buffer);
+}
+
+void Ipv4::retryPendingPackets(uint32_t ip_destination) {
+    auto pending_buffers = m_pending_packets.find(ip_destination);
+
+    if(pending_buffers != m_pending_packets.end()) {
+        for(const std::shared_ptr<Buffer>& buffer : pending_buffers->second) {
+            transmitPacket(buffer);
+        }
+    }
 }

@@ -30,7 +30,7 @@ Tap::Tap(const std::string& desired_device_name, const std::string& ipv4)
         , m_mac()
         , m_ipv6()
         , m_mtu()
-        , m_arp_state(*this)
+        , m_arp_state(*this, m_ipv4_state)
         , m_ipv4_state(*this, m_arp_state, m_icmp_state)
         , m_icmp_state(*this, m_ipv4_state) {
     initDevice(desired_device_name);
@@ -116,14 +116,12 @@ void Tap::listen() {
     }
 }
 
-void Tap::send(uint8_t *dest_mac, uint16_t eth_type, const std::shared_ptr<Buffer>& buffer) {
+void Tap::send(uint8_t *dest_mac, const std::shared_ptr<Buffer>& buffer) {
     // Setup Ethernet frame
-    buffer->resetDataOffset();
-    std::memcpy(buffer->m_data, dest_mac, 6);
-    std::memcpy(buffer->m_data + 6, m_mac, 6);
-    buffer->pack16(eth_type, 12);
+    std::memcpy(buffer->getDefaultDataOffset(), dest_mac, 6);
+    std::memcpy(buffer->getDefaultDataOffset() + 6, m_mac, 6);
 
-    ssize_t bytes = ::write(m_sock_fd, buffer->m_data, buffer->m_size);
+    ssize_t bytes = ::write(m_sock_fd, buffer->getDefaultDataOffset(), buffer->m_size);
 
     if(bytes < 0)
         throw std::runtime_error("failed to send buffer");
