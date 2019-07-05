@@ -60,11 +60,7 @@ void Arp::processArpPacket(EthernetFrame *frame) {
 void Arp::processArpRequest(uint8_t *hardware_addr, uint32_t protocol_addr) {
     auto buffer = std::make_shared<Buffer>(sizeof(EthernetFrame) + sizeof(ArpPacket));
 
-    // Set Ethernet type
-    auto ethernet_frame = reinterpret_cast<EthernetFrame *>(buffer->m_data);
-    ethernet_frame->ethernet_type = htons(ETH_P_ARP);
-
-    auto arp_packet = reinterpret_cast<ArpPacket *>(ethernet_frame->payload);
+    auto arp_packet = reinterpret_cast<ArpPacket *>(buffer->m_data + sizeof(EthernetFrame));
 
     arp_packet->hw_type = htons(ARP_HWTYPE_ETHERNET);
     arp_packet->protocol_type = htons(ETH_P_IP);
@@ -77,7 +73,7 @@ void Arp::processArpRequest(uint8_t *hardware_addr, uint32_t protocol_addr) {
     std::memcpy(arp_packet->source_hw_addr, m_tap_device.m_mac, ETHERNET_ADDRESS_LEN);
     std::memcpy(arp_packet->dest_hw_addr, hardware_addr, ETHERNET_ADDRESS_LEN);
 
-    m_tap_device.send(hardware_addr, buffer);
+    m_tap_device.send(hardware_addr, ETH_P_ARP, buffer);
 }
 
 void Arp::addToArpCache(uint8_t *hardware_addr, uint32_t protocol_addr) {
@@ -97,10 +93,7 @@ void Arp::addToArpCache(uint8_t *hardware_addr, uint32_t protocol_addr) {
 
 void Arp::sendArpRequest(uint32_t protocol_address) {
     auto buffer = std::make_shared<Buffer>(sizeof(EthernetFrame) + sizeof(ArpPacket));
-    auto ethernet_frame = reinterpret_cast<EthernetFrame *>(buffer->m_data);
-    auto arp_packet = reinterpret_cast<ArpPacket *>(ethernet_frame->payload);
-
-    ethernet_frame->ethernet_type = htons(ETH_P_ARP);
+    auto arp_packet = reinterpret_cast<ArpPacket *>(buffer->m_data + sizeof(EthernetFrame));
 
     arp_packet->hw_type = htons(ARP_HWTYPE_ETHERNET);
     arp_packet->protocol_type = htons(ETH_P_IP);
@@ -113,7 +106,7 @@ void Arp::sendArpRequest(uint32_t protocol_address) {
     std::memset(arp_packet->dest_hw_addr, 0xFF, ETHERNET_ADDRESS_LEN);
     std::memcpy(arp_packet->source_hw_addr, m_tap_device.m_mac, ETHERNET_ADDRESS_LEN);
 
-    m_tap_device.send(arp_packet->dest_hw_addr, buffer);
+    m_tap_device.send(arp_packet->dest_hw_addr, ETH_P_ARP, buffer);
 }
 
 

@@ -17,7 +17,7 @@ public:
     uint64_t m_ipv6[2];
     uint16_t m_mtu;
 
-    void send(uint8_t *dest_mac, const std::shared_ptr<Buffer>& buffer);
+    void send(uint8_t *dest_mac, uint16_t ethernet_type, const std::shared_ptr<Buffer>& buffer);
     explicit Tap(const std::string& desired_device_name, const std::string& ipv4);
     ~Tap();
 

@@ -60,14 +60,10 @@ void Ipv4::processIpv4Packet(EthernetFrame *frame) {
 std::shared_ptr<Buffer> Ipv4::createPacket(uint32_t ip_destination, uint8_t ip_protocol, size_t size) {
     auto buffer = std::make_shared<Buffer>(sizeof(EthernetFrame) + sizeof(Ipv4Packet) + size);
 
-    // Set Ethernet type
-    auto ethernet_frame = reinterpret_cast<EthernetFrame *>(buffer->m_data);
-    ethernet_frame->ethernet_type = htons(ETH_P_IP);
-
     // Header stuff
     uint8_t header_len = 20;
 
-    auto ip_packet = reinterpret_cast<Ipv4Packet *>(ethernet_frame->payload);
+    auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->m_data + sizeof(EthernetFrame));
     ip_packet->header_len = header_len >> 2u;
     ip_packet->version = 4;
     ip_packet->len = htons(buffer->m_size - sizeof(EthernetFrame));
@@ -96,7 +92,7 @@ void Ipv4::transmitPacket(const std::shared_ptr<Buffer>& buffer) {
         return;
     }
 
-    m_tap_device.send(dest_mac, buffer);
+    m_tap_device.send(dest_mac, ETH_P_IP, buffer);
 }
 
 void Ipv4::retryPendingPackets(uint32_t ip_destination) {

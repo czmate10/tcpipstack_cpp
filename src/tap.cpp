@@ -116,10 +116,12 @@ void Tap::listen() {
     }
 }
 
-void Tap::send(uint8_t *dest_mac, const std::shared_ptr<Buffer>& buffer) {
+void Tap::send(uint8_t *dest_mac, uint16_t ethernet_type, const std::shared_ptr<Buffer>& buffer) {
     // Setup Ethernet frame
-    std::memcpy(buffer->getDefaultDataOffset(), dest_mac, 6);
-    std::memcpy(buffer->getDefaultDataOffset() + 6, m_mac, 6);
+    auto ethernet_frame = reinterpret_cast<EthernetFrame *>(buffer->getDefaultDataOffset());
+    ethernet_frame->ethernet_type = htons(ethernet_type);
+    std::memcpy(ethernet_frame->dest_mac, dest_mac, 6);
+    std::memcpy(ethernet_frame->source_mac, m_mac, 6);
 
     ssize_t bytes = ::write(m_sock_fd, buffer->getDefaultDataOffset(), buffer->m_size);
 
