@@ -12,82 +12,86 @@ Arp::Arp(Tap &tap_device) : m_tap_device(tap_device), m_arp_cache() {
 
 }
 
-ArpPacket Arp::parseArpPacket(const std::shared_ptr<Buffer> &buffer) {
+void Arp::processArpPacket(const std::shared_ptr<Buffer>& buffer) {
     auto arp_packet = reinterpret_cast<ArpPacket *>(buffer->m_data);
 
     arp_packet->hw_type = ntohs(arp_packet->hw_type);
     arp_packet->protocol_type = ntohs(arp_packet->protocol_type);
     arp_packet->op_code = ntohs(arp_packet->op_code);
 
-    return *arp_packet;
-}
-
-void Arp::processArpPacket(const std::shared_ptr<Buffer>& buffer) {
-    auto arp_packet = parseArpPacket(buffer);
-
-    if(arp_packet.hw_type != ARP_HWTYPE_ETHERNET)
+    if(arp_packet->hw_type != ARP_HWTYPE_ETHERNET)
         return; // not Ethernet
 
-    if(arp_packet.hw_size != ETHERNET_ADDRESS_LEN)
+    if(arp_packet->hw_size != ETHERNET_ADDRESS_LEN)
         return;
 
-    if(arp_packet.protocol_size != IPV4_ADDRESS_LEN)
+    if(arp_packet->protocol_size != IPV4_ADDRESS_LEN)
         return;
 
-    if(arp_packet.protocol_type != ETH_P_IP)
+    if(arp_packet->protocol_type != ETH_P_IP)
         return;
 
-    processArpPacket(arp_packet.op_code, arp_packet.source_mac, arp_packet.dest_mac, arp_packet.source_addr,
-                     arp_packet.dest_addr);
-}
-
-void Arp::processArpPacket(uint16_t opcode, uint8_t *source_mac, uint8_t *dest_mac, uint32_t source_addr, uint32_t dest_addr) {
     // Is it for us or broadcast?
-    for(int i = 0; i < ETHERNET_ADDRESS_LEN; i++) {
-        if (dest_mac[i] != 0x00) {
-            if (memcmp(dest_mac, m_tap_device.m_mac, 6) != 0)
+    for(uint8_t i : arp_packet->dest_hw_addr) {
+        if (i != 0x00) {
+            if (memcmp(arp_packet->dest_hw_addr, m_tap_device.m_mac, 6) != 0)
                 return;
             else
                 break;
         }
     }
 
-    if(opcode == ARP_OP_REQUEST) {
-        auto buffer = std::make_shared<Buffer>(ETHERNET_HEADER_SIZE + sizeof(ArpPacket));
-        buffer->m_data += ETHERNET_HEADER_SIZE;
+    switch(arp_packet->op_code) {
+        case ARP_OP_REQUEST:
+            addToArpCache(arp_packet->source_hw_addr, arp_packet->source_protocol_addr);
+            processArpRequest(arp_packet->source_hw_addr, arp_packet->source_protocol_addr);
+            break;
 
-        ArpPacket arp_packet{};
-        arp_packet.hw_type = htons(ARP_HWTYPE_ETHERNET);
-        arp_packet.protocol_type = htons(ETH_P_IP);
-        arp_packet.hw_size = ETHERNET_ADDRESS_LEN;
-        arp_packet.protocol_size = IPV4_ADDRESS_LEN;
-        arp_packet.op_code = htons(ARP_OP_REPLY);
-        arp_packet.source_addr = m_tap_device.m_ipv4;
-        arp_packet.dest_addr = source_addr;
+        case ARP_OP_REPLY:
+            break;
 
-        std::memcpy(arp_packet.source_mac, m_tap_device.m_mac, 6);
-        std::memcpy(arp_packet.dest_mac, source_mac, 6);
-
-        std::memcpy(buffer->m_data, &arp_packet, sizeof(arp_packet));
-
-        m_tap_device.send(source_mac, ETH_P_ARP, buffer);
+        default:
+            std::cerr << "Unknown ARP opcode: " << arp_packet->op_code << std::endl;
     }
-
-    // Add to cache
-    ArpCacheEntry cache_entry = {
-            .hw_address = {source_mac[0], source_mac[1], source_mac[2], source_mac[3], source_mac[4], source_mac[5]},
-            .protocol_address = source_addr
-    };
-    m_arp_cache[source_addr] = cache_entry;
-
-    std::cout << "Added IP to ARP cache: " << ipv4ToString(source_addr) << " : " << macToString(source_mac) << std::endl;
 }
 
-uint8_t *Arp::translate_protocol_addr(uint32_t protocol_addr) {
+void Arp::processArpRequest(uint8_t *hardware_addr, uint32_t protocol_addr) {
+    auto buffer = std::make_shared<Buffer>(ETHERNET_HEADER_SIZE + sizeof(ArpPacket));
+    buffer->m_data += ETHERNET_HEADER_SIZE;
+
+    auto arp_packet = reinterpret_cast<ArpPacket *>(buffer->m_data);
+
+    arp_packet->hw_type = htons(ARP_HWTYPE_ETHERNET);
+    arp_packet->protocol_type = htons(ETH_P_IP);
+    arp_packet->hw_size = ETHERNET_ADDRESS_LEN;
+    arp_packet->protocol_size = IPV4_ADDRESS_LEN;
+    arp_packet->op_code = htons(ARP_OP_REPLY);
+    arp_packet->source_protocol_addr = m_tap_device.m_ipv4;
+    arp_packet->dest_protocol_addr = protocol_addr;
+
+    std::memcpy(arp_packet->source_hw_addr, m_tap_device.m_mac, 6);
+    std::memcpy(arp_packet->dest_hw_addr, hardware_addr, 6);
+
+    m_tap_device.send(hardware_addr, ETH_P_ARP, buffer);
+}
+
+void Arp::addToArpCache(uint8_t *hardware_addr, uint32_t protocol_addr) {
+    // Add to cache
+    ArpCacheEntry cache_entry = {
+            .hardware_addr = {hardware_addr[0], hardware_addr[1], hardware_addr[2], hardware_addr[3], hardware_addr[4], hardware_addr[5]},
+            .protocol_addr = protocol_addr
+    };
+    m_arp_cache[protocol_addr] = cache_entry;
+
+    std::cout << "Added IP to ARP cache: " << ipv4ToString(protocol_addr) << " : " << macToString(hardware_addr) << std::endl;
+}
+
+
+uint8_t *Arp::translateProtocolAddr(uint32_t protocol_addr) {
     auto result = m_arp_cache.find(protocol_addr);
 
     if(result == m_arp_cache.end())
         return nullptr;
     else
-        return result->second.hw_address;
+        return result->second.hardware_addr;
 }

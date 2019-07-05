@@ -43,7 +43,7 @@ void Ipv4::processIpv4Packet(const std::shared_ptr<Buffer> &buffer) {
 
     switch(ip_packet->protocol) {
         case IPPROTO_ICMP:
-            m_icmp_state.processIcmpPacket(buffer, ip_packet);
+            m_icmp_state.processIcmpPacket(ip_packet);
             break;
 
         case IPPROTO_UDP:
@@ -59,20 +59,13 @@ void Ipv4::processIpv4Packet(const std::shared_ptr<Buffer> &buffer) {
     }
 }
 
-std::shared_ptr<Buffer> Ipv4::createBuffer(size_t size) {
+std::shared_ptr<Buffer> Ipv4::createPacket(uint32_t ip_destination, uint8_t ip_protocol, size_t size) {
     auto buffer = std::make_shared<Buffer>(ETHERNET_HEADER_SIZE + sizeof(Ipv4Packet) + size);
-    buffer->m_data += ETHERNET_HEADER_SIZE + sizeof(Ipv4Packet);
-
-    return buffer;
-}
-
-void Ipv4::transmitBuffer(uint32_t ip_destination, uint8_t ip_protocol, std::shared_ptr<Buffer> buffer) {
-    buffer->resetDataOffset(ETHERNET_HEADER_SIZE);
 
     // Header stuff
     uint8_t header_len = 20;
 
-    auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->m_data);
+    auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->m_data + ETHERNET_HEADER_SIZE);
     ip_packet->header_len = header_len >> 2u;
     ip_packet->version = 4;
     ip_packet->len = htons(buffer->m_size - ETHERNET_HEADER_SIZE);
@@ -85,10 +78,19 @@ void Ipv4::transmitBuffer(uint32_t ip_destination, uint8_t ip_protocol, std::sha
     ip_packet->checksum = 0;
     ip_packet->checksum = checksum(reinterpret_cast<uint16_t *>(ip_packet), 20, 0);
 
+    // Set pointer to the payload
+    buffer->m_data += ETHERNET_HEADER_SIZE + sizeof(Ipv4Packet);
+
+    return buffer;
+}
+
+void Ipv4::transmitPacket(const std::shared_ptr<Buffer>& buffer) {
+    auto ip_packet = reinterpret_cast<Ipv4Packet *>(buffer->getDefaultDataOffset() + ETHERNET_HEADER_SIZE);
+
     // Get hardware address of destination
-    auto dest_mac = m_arp_state.translate_protocol_addr(ip_destination);
+    auto dest_mac = m_arp_state.translateProtocolAddr(ip_packet->dest_ip);
     if(dest_mac == nullptr) {
-        std::cerr << "destination IP not found in ARP cache: " << ipv4ToString(ip_destination) << std::endl;
+        std::cerr << "destination IP not found in ARP cache: " << ipv4ToString(ip_packet->dest_ip) << std::endl;
         return;
     }
 

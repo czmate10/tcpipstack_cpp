@@ -2,7 +2,6 @@
 
 #include <buffer.h>
 #include <stdexcept>
-#include <stdlib.h>
 #include <memory>
 #include <cstring>
 #include <netinet/in.h>
@@ -25,6 +24,10 @@ Buffer::~Buffer() {
 
 void Buffer::resetDataOffset(size_t offset) {
     m_data = m_data_original + offset;
+}
+
+uint8_t *Buffer::getDefaultDataOffset() {
+    return m_data_original;
 }
 
 uint8_t Buffer::unpack8(size_t offset) {

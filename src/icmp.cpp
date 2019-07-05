@@ -11,8 +11,8 @@ Icmp::Icmp(Tap& tap_device, Ipv4 &ipv4_state) : m_tap_device(tap_device), m_ipv4
 
 }
 
-void Icmp::processIcmpPacket(const std::shared_ptr<Buffer> &buffer, Ipv4Packet *ipv4_packet) {
-    auto icmp_packet = reinterpret_cast<IcmpPacket *>(buffer->m_data);
+void Icmp::processIcmpPacket(Ipv4Packet *ipv4_packet) {
+    auto icmp_packet = reinterpret_cast<IcmpPacket *>(ipv4_packet->payload);
 
     uint32_t icmp_packet_size = ipv4_packet->len - (ipv4_packet->header_len * 4);
 
@@ -28,16 +28,16 @@ void Icmp::processIcmpPacket(const std::shared_ptr<Buffer> &buffer, Ipv4Packet *
 
     switch(icmp_packet->type) {
         case ICMP_ECHO: {
-            auto buffer_reply = m_ipv4_state.createBuffer(icmp_packet_size);
+            auto buffer_reply = m_ipv4_state.createPacket(ipv4_packet->source_ip, IPPROTO_ICMP, icmp_packet_size);
             auto icmp_packet_reply = reinterpret_cast<IcmpPacket *>(buffer_reply->m_data);
 
             icmp_packet_reply->type = ICMP_ECHOREPLY;
             icmp_packet_reply->code = 0;
             icmp_packet_reply->header_data = icmp_packet->header_data;
-            std::memcpy(icmp_packet_reply->data, icmp_packet->data, icmp_packet_size - sizeof(IcmpPacket));
+            std::memcpy(icmp_packet_reply->payload, icmp_packet->payload, icmp_packet_size - sizeof(IcmpPacket));
             icmp_packet_reply->checksum = checksum(reinterpret_cast<uint16_t *>(icmp_packet_reply), icmp_packet_size, 0);
 
-            m_ipv4_state.transmitBuffer(ipv4_packet->source_ip, IPPROTO_ICMP, buffer_reply);
+            m_ipv4_state.transmitPacket(buffer_reply);
 
             std::cout << "sent reply" <<std::endl;
             break;

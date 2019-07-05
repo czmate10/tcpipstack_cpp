@@ -11,7 +11,7 @@
 
 
 int main() {
-    auto tap_device = new Tap("tap0", "192.168.100.6");
+    auto tap_device = new Tap("tap0", "10.0.0.11");
 
     std::cout << macToString(tap_device->m_mac) << std::endl;
     std::cout << "TAP device created, name: " << tap_device->m_device_name << ", MTU: " << tap_device->m_mtu << std::endl;

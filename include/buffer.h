@@ -12,6 +12,7 @@ public:
     ~Buffer();
 
     void resetDataOffset(size_t offset = 0);
+    uint8_t *getDefaultDataOffset();
 
     void pack8(uint8_t data, size_t offset = 0);
     void pack16(uint16_t data, size_t offset = 0);

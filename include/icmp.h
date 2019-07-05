@@ -17,5 +17,5 @@ private:
 
 public:
     Icmp(Tap& tap_device, Ipv4 &ipv4_state);
-    void processIcmpPacket(const std::shared_ptr<Buffer> &buffer, Ipv4Packet *ipv4_packet);
+    void processIcmpPacket(Ipv4Packet *ipv4_packet);
 };

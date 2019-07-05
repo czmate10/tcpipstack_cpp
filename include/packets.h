@@ -10,10 +10,10 @@ struct ArpPacket
     uint8_t hw_size;
     uint8_t protocol_size;
     uint16_t op_code;
-    uint8_t source_mac[6];
-    uint32_t source_addr;
-    uint8_t dest_mac[6];
-    uint32_t dest_addr;
+    uint8_t source_hw_addr[6];
+    uint32_t source_protocol_addr;
+    uint8_t dest_hw_addr[6];
+    uint32_t dest_protocol_addr;
 } __attribute__((packed));
 
 struct Ipv4Packet
@@ -28,7 +28,7 @@ struct Ipv4Packet
     uint16_t checksum;
     uint32_t source_ip;
     uint32_t dest_ip;
-    uint8_t data[];
+    uint8_t payload[];
 } __attribute__((packed));
 
 struct IcmpPacket {
@@ -36,5 +36,5 @@ struct IcmpPacket {
     uint8_t code;
     uint16_t checksum;
     uint32_t header_data;
-    uint8_t data[];
+    uint8_t payload[];
 };

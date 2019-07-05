@@ -21,19 +21,18 @@ public:
     explicit Arp(Tap &tap_device);
 
     void processArpPacket(const std::shared_ptr<Buffer>& buffer);
-    uint8_t *translate_protocol_addr(uint32_t protocol_addr);
+    uint8_t *translateProtocolAddr(uint32_t protocol_addr);
 
 private:
     struct ArpCacheEntry
     {
-        uint8_t hw_address[ETHERNET_ADDRESS_LEN];
-        uint32_t protocol_address;
+        uint8_t hardware_addr[ETHERNET_ADDRESS_LEN];
+        uint32_t protocol_addr;
     };
 
     Tap &m_tap_device;
     std::unordered_map<uint32_t, Arp::ArpCacheEntry> m_arp_cache;
 
-    ArpPacket parseArpPacket(const std::shared_ptr<Buffer>& buffer);
-    void processArpPacket(uint16_t opcode, uint8_t *source_mac, uint8_t *dest_mac, uint32_t source_addr,
-                          uint32_t dest_addr);
+    void processArpRequest(uint8_t *hardware_addr, uint32_t protocol_addr);
+    void addToArpCache(uint8_t *hardware_addr, uint32_t protocol_addr);
 };
