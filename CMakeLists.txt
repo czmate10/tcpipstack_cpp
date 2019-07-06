@@ -12,6 +12,8 @@ add_executable(tcpipstack_cpp
         src/arp.cpp
         src/ipv4.cpp
         src/icmp.cpp
+        src/udp.cpp
+        src/tcp.cpp
         src/utility.cpp
 
         include/packets.h
@@ -21,4 +23,6 @@ add_executable(tcpipstack_cpp
         include/arp.h
         include/utility.h
         include/ipv4.h
-        include/icmp.h)
+        include/icmp.h
+        include/udp.h
+        include/tcp.h)

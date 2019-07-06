@@ -16,11 +16,13 @@
 class Tap;
 class Arp;
 class Icmp;
+class Udp;
+class Tcp;
 
 
 class Ipv4 {
 public:
-    Ipv4(Tap &tap_device, Arp &arp_state, Icmp &icmp_state);
+    Ipv4(Tap &tap_device, Arp &arp_state, Icmp &icmp_state, Udp &udp_state, Tcp &tcp_state);
 
     void processIpv4Packet(EthernetFrame *frame);
     std::shared_ptr<Buffer> createPacket(uint32_t ip_destination, uint8_t ip_protocol, size_t size);
@@ -31,6 +33,8 @@ private:
     Tap &m_tap_device;
     Arp &m_arp_state;
     Icmp &m_icmp_state;
+    Udp &m_udp_state;
+    Tcp &m_tcp_state;
 
     std::unordered_map<uint32_t, std::vector<std::shared_ptr<Buffer>>> m_pending_packets;
 };

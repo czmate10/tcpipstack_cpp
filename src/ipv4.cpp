@@ -8,8 +8,12 @@
 #include "arp.h"
 
 
-Ipv4::Ipv4(Tap &tap_device, Arp& arp_state, Icmp& icmp_state) : m_tap_device(tap_device), m_arp_state(arp_state), m_icmp_state(icmp_state) {
-
+Ipv4::Ipv4(Tap &tap_device, Arp& arp_state, Icmp& icmp_state, Udp& udp_state, Tcp& tcp_state)
+	: m_tap_device(tap_device)
+	, m_arp_state(arp_state)
+	, m_icmp_state(icmp_state)
+	, m_udp_state(udp_state)
+	, m_tcp_state(tcp_state) {
 }
 
 void Ipv4::processIpv4Packet(EthernetFrame *frame) {
@@ -45,11 +49,11 @@ void Ipv4::processIpv4Packet(EthernetFrame *frame) {
             break;
 
         case IPPROTO_UDP:
-            printf("udp\n");
+            m_udp_state.processUdpPacket(ip_packet);
             break;
 
         case IPPROTO_TCP:
-            printf("tcp\n");
+            m_tcp_state.processTcpPacket(ip_packet);
             break;
 
         default:
